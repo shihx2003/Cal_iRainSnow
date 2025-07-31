@@ -1,0 +1,34 @@
+# Global configuration
+global:
+  ROOT: E:\Working\QingHaiSnow\CalRsim
+  source_dir: E:\Working\QingHaiSnow\CalRsim\Source
+  run_dir: E:\Working\QingHaiSnow\CalRsim\Run
+  output_dir: E:\Working\QingHaiSnow\CalRsim\Output
+  obs_dir: E:\Working\QingHaiSnow\CalRsim\Source\Obs
+
+basins:
+  names:
+    - buhahk
+
+parameters_info:
+  names:
+    - K
+    - CG
+    - CI
+    - CS
+    - Kech
+    - KLWL
+  ini_values:
+    K: 1.5
+    CG: 0.999
+    CI: 0.97
+    CS: 0.75
+    Kech: 0.03
+    KLWL: 5.0
+  ranges:
+    K: [0.0, 2.0]
+    CG: [0.0, 1.0]
+    CI: [0.0, 1.0]
+    CS: [0.0, 1.0]
+    Kech: [0.001, 0.5]
+    KLWL: [0.0, 10.0]
