@@ -29,10 +29,10 @@ def load_lumpara(file):
     df = pd.read_csv(file, sep='\t')
     return df
 
-def write_lumpara(df, job_dir, basin):
-    df.to_csv(os.path.join(job_dir, f"Lumpara_{basin}.txt"), sep='\t', index=False)
+def write_lumpara(df, job_dir):
+    df.to_csv(os.path.join(job_dir), sep='\t', index=False)
 
-def update_lumpara(lumpara_file, job_dir, basin, new_params):
+def update_lumpara(lumpara_file, job_dir, new_params):
     """
     Adjust the lumpara parameters and write to a new file.
     
@@ -53,7 +53,7 @@ def update_lumpara(lumpara_file, job_dir, basin, new_params):
     """
     df = load_lumpara(lumpara_file)
     df = adjust_lumpara(df, new_params)
-    write_lumpara(df, job_dir, basin)
+    write_lumpara(df, job_dir)
 
 
 def check_lumpara(lumpara_file, new_params):
