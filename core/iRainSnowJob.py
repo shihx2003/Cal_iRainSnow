@@ -41,8 +41,10 @@ class iRainSnowInitializer:
         """
         self.ROOT = global_config['ROOT']
         self.default_lumpara_path = os.path.join(self.ROOT, 'Source', 'params', 'Lumpara_basin.txt')
-        
+        self.result_dir = os.path.join(self.ROOT, 'Results')
+
         self.basin_name = basin_config['name']
+
         self.src_dir = os.path.join(self.ROOT, 'Source', self.basin_name)
         self.run_dir = os.path.join(self.ROOT, 'Run', self.basin_name)
 
@@ -77,7 +79,7 @@ class iRainSnowInitializer:
 
         self.lumpara_file = os.path.join(self.job_dir, 'Data', f"Lumpara_{self.basin_name}.txt")
         self.default_lumpara_path = os.path.join(self.ROOT, 'Source', 'params', 'Lumpara_basin.txt')
-        update_lumpara(self.default_lumpara_path, self.lumpara_file, self.basin_name, self.set_params)
+        update_lumpara(self.default_lumpara_path, self.lumpara_file, self.set_params)
 
         if not check_lumpara(self.lumpara_file, self.set_params):
             raise ValueError(f"Invalid parameters in {self.lumpara_file}. Please check the parameters.")
@@ -126,3 +128,33 @@ class iRainSnowInitializer:
         except subprocess.CalledProcessError as e:
             logger.error(f"Error running iRainSnow.exe: {e}")
             raise RuntimeError(f"Failed to run iRainSnow.exe: {e}")
+        
+    def run(self):
+        self.inital_job()
+        self.run_exe()
+
+    def collect(self, mark=None):
+        """
+        Collect results from the job directory.
+        This method can be extended to collect specific results as needed.
+        """
+        self.result_file = os.path.join(self.job_dir, 'Output', "StaQSim.txt")
+        if not os.path.exists(self.result_file):
+            logger.warning(f"Result file {self.result_file} does not exist.")
+        else:
+            logger.info(f"Results collected from {self.result_file}")
+            # copy results to a specific location
+            if mark is not None:
+                output_path = os.path.join(self.result_dir, self.basin_name, f"StaQSim_{self.job_id}_{mark}.txt")
+            else:
+                output_path = os.path.join(self.result_dir, self.basin_name, f"StaQSim_{self.job_id}.txt")
+                
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            shutil.copy(self.result_file, output_path)
+            logger.info(f"Copied results to {output_path}")
+            
+    def clean(self):
+        """
+        Clean up the job directory.
+        """
+        pass
