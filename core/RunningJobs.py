@@ -90,12 +90,6 @@ def schedule_and_track_jobs(set_jobs: dict, max_num: int = 7):
     else:
         logger.warning(f"Some jobs were not processed correctly. Summary : Waiting jobs: {waiting_ids}")
     
-    for finished_id in finished_ids:
-        set_jobs[finished_id].collect()
-
-    for error_id in error_ids:
-        set_jobs[error_id].collect(mark="error")
-
     logger.info(f"All jobs completed. Summary:")
     logger.info(f"Runned jobs: {runned_ids}")
     logger.info(f"Finished jobs: {finished_ids}")

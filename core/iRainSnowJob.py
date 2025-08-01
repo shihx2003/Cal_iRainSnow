@@ -124,14 +124,14 @@ class iRainSnowInitializer:
                     logger.warning(f"Job {self.job_id} finished without 'Saving results' message.")
                     raise RuntimeError("iRainSnow.exe finished but did not report 'Saving results'.")
                 logger.info(f"Job {self.job_id} completed successfully.")
-                
+
         except subprocess.CalledProcessError as e:
             logger.error(f"Error running iRainSnow.exe: {e}")
             raise RuntimeError(f"Failed to run iRainSnow.exe: {e}")
-        
-    def run(self):
-        self.inital_job()
-        self.run_exe()
+
+        finally:
+            logger.info(f"Finished running iRainSnow.exe for job {self.job_id}")
+            return saving_found
 
     def collect(self, mark=None):
         """
@@ -152,9 +152,19 @@ class iRainSnowInitializer:
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             shutil.copy(self.result_file, output_path)
             logger.info(f"Copied results to {output_path}")
-            
+
     def clean(self):
         """
         Clean up the job directory.
         """
         pass
+
+    def run(self):
+        self.inital_job()
+        return_code = self.run_exe()
+
+        if return_code:
+            self.collect()
+        else:
+            self.collect(mark="error")
+
