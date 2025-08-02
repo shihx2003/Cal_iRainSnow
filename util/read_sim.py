@@ -29,7 +29,7 @@ def read_sta_qsim(StaQSim_path: str) -> pd.DataFrame:
 
 def load_qsim(job_yaml, basin, **kwargs) -> pd.DataFrame:
 
-    result_dir = kwargs.get('result_dir', 'E:/Working/QingHaiSnow/CalRsim/Results/')
+    result_dir = kwargs.get('result_dir', './Results/')
 
     with open(job_yaml, 'r', encoding='utf-8') as f:
         job_config = yaml.safe_load(f)

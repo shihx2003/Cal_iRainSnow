@@ -13,7 +13,7 @@ import pandas as pd
 def load_qobs(basin, **kwargs) -> pd.DataFrame:
     """
     """
-    obs_dir = kwargs.get('obs_dir', 'E:/Working/QingHaiSnow/CalRsim/Source/Qobs/')
+    obs_dir = kwargs.get('obs_dir', './Source/Qobs/')
     df = pd.read_csv(obs_dir + f'{basin}_qobs.csv')
     df.rename(columns={'Qobs': 'obs'}, inplace=True)
     df['Date'] = pd.to_datetime(df['Date'])
