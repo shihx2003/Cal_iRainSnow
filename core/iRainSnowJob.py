@@ -153,11 +153,40 @@ class iRainSnowInitializer:
             shutil.copy(self.result_file, output_path)
             logger.info(f"Copied results to {output_path}")
 
-    def clean(self):
-        """
-        Clean up the job directory.
-        """
-        pass
+    def cleanup(self):
+
+        logger.info(f"Cleaning job directory {self.job_dir}...")
+
+        # 要保留的文件路径
+        keep_files = {
+            os.path.join(self.job_dir, 'Output', 'StaQSim.txt'),
+            os.path.join(self.job_dir, 'Data', f"Lumpara_{self.basin_name}.txt")
+        }
+    
+        for path in keep_files:
+            if not os.path.exists(path):
+                logger.warning(f"File to preserve does not exist: {path}")
+
+        for root, dirs, files in os.walk(self.job_dir, topdown=False):
+            for file in files:
+                file_path = os.path.join(root, file)
+                if file_path not in keep_files:
+                    try:
+                        os.remove(file_path)
+                        logger.debug(f"Deleted file: {file_path}")
+                    except Exception as e:
+                        logger.error(f"Failed to remove file {file_path}: {e}")
+            keep_dirs = {self.job_dir,
+                        os.path.join(self.job_dir, 'Data'),
+                        os.path.join(self.job_dir, 'Output')}
+            if root not in keep_dirs:
+                try:
+                    shutil.rmtree(root)
+                    logger.debug(f"Deleted directory: {root}")
+                except Exception as e:
+                    logger.error(f"Failed to remove directory {root}: {e}")
+
+        logger.info("Job directory cleaned successfully.")
 
     def run(self):
         self.inital_job()
@@ -165,6 +194,7 @@ class iRainSnowInitializer:
 
         if return_code:
             self.collect()
+            self.cleanup()
         else:
             self.collect(mark="error")
 
