@@ -23,6 +23,8 @@ def read_sta_qsim(StaQSim_path: str) -> pd.DataFrame:
     df.replace('***************', 9999999999.0000, inplace=True)
     
     df['Date'] = pd.to_datetime(df['Date'])
+    df['Sim_Q'] = df['Sim_Q'].astype(float)
+    
     return df
 
 def load_qsim(job_yaml, basin, **kwargs) -> pd.DataFrame:
@@ -47,7 +49,6 @@ def load_qsim(job_yaml, basin, **kwargs) -> pd.DataFrame:
             
     qsim_df = pd.concat(qsim_dfs, axis=1)
 
-    df['Date'] = pd.to_datetime(df['Date'])
     return qsim_df
 
 if __name__ == "__main__":
