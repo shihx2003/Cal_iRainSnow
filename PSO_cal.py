@@ -47,21 +47,22 @@ print("param_bounds:", param_bounds)
 print("param_bounds shape:", np.array(param_bounds).shape)
 
 # === 读取观测数据（不变）===
-df_obs = load_qobs('buhahk')
-df_obs = div_q(df_obs, '2014-07-01', '2016-01-01')
+df_obs = load_qobs(basin_config["name"])
+df_obs = div_q(df_obs, '2015-01-01', '2020-12-31')
 
 iters_count = 1
 def evaluate_swarm(x):
 
     global iters_count
     x_df = pd.DataFrame(x, columns=param_names)
-    job_group = f"iRainSnowJob_PSO_{iters_count}"
+    job_group = f"Full_PSO_{basin_config['name']}_{iters_count}"
     jobs = generate_jobs(x_df, job_group)
     set_jobs = batch_instantiate(global_config, basin_config, jobs)
     schedule_and_track_jobs(set_jobs, max_num=12)
 
     df_sim = load_qsim(f"./jobs/{job_group}.yaml", basin_config["name"])
-    df_sim = div_q(df_sim, '2014-07-01', '2016-01-01')
+    df_sim = div_q(df_sim, '2015-01-01', '2020-12-31')
+    print(df_obs, df_sim)
     nse_dict = NSE(df_obs, df_sim)
     nse_df = dict_to_df(nse_dict, "nse")
 
