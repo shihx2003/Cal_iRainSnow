@@ -141,16 +141,29 @@ class iRainSnowInitializer:
         self.result_file = os.path.join(self.job_dir, 'Output', "StaQSim.txt")
         if not os.path.exists(self.result_file):
             logger.warning(f"Result file {self.result_file} does not exist.")
+            self.result_file = os.path.join(self.ROOT, 'Source', "def_result", f"StaQSim_def_{self.basin_name}.txt")
+
+            output_path_mark = os.path.join(self.result_dir, self.basin_name, f"StaQSim_{self.job_id}_loss.txt")
+            output_path = os.path.join(self.result_dir, self.basin_name, f"StaQSim_{self.job_id}.txt")
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            shutil.copy(self.result_file, output_path)
+            os.makedirs(os.path.dirname(output_path_mark), exist_ok=True)
+            shutil.copy(self.result_file, output_path_mark)
         else:
             logger.info(f"Results collected from {self.result_file}")
             # copy results to a specific location
             if mark is not None:
-                output_path = os.path.join(self.result_dir, self.basin_name, f"StaQSim_{self.job_id}_{mark}.txt")
+                output_path_mark = os.path.join(self.result_dir, self.basin_name, f"StaQSim_{self.job_id}_{mark}.txt")
+                output_path = os.path.join(self.result_dir, self.basin_name, f"StaQSim_{self.job_id}.txt")
+                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                shutil.copy(self.result_file, output_path)
+                os.makedirs(os.path.dirname(output_path_mark), exist_ok=True)
+                shutil.copy(self.result_file, output_path_mark)
             else:
                 output_path = os.path.join(self.result_dir, self.basin_name, f"StaQSim_{self.job_id}.txt")
-                
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            shutil.copy(self.result_file, output_path)
+                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                shutil.copy(self.result_file, output_path)
+
             logger.info(f"Copied results to {output_path}")
 
     def cleanup(self):
