@@ -3,11 +3,15 @@ Asc
 Source
 Run
 *.rar
+*.zip
 *.xlsx
-*.docx
 *temp*
 *test*
 *txt
+log
+*.log
+jobs/*
+Analysis
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
