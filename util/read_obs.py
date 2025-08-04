@@ -35,6 +35,24 @@ def div_q(df, start, end) -> pd.DataFrame:
 
     return mask_df
 
+def div_q_chunk(df, start, end, chunk_size=500) -> pd.DataFrame:
+    """
+    """
+    df = df.copy()
+    start = pd.to_datetime(start)
+    end = pd.to_datetime(end)
+
+    if not pd.api.types.is_datetime64_any_dtype(df['Date']):
+        df['Date'] = pd.to_datetime(df['Date'])
+    result = []
+    for start_idx in range(0, len(df), chunk_size):
+        chunk = df.iloc[start_idx:start_idx+chunk_size]
+        mask = (chunk['Date'] >= start) & (chunk['Date'] <= end)
+        chunk_filtered = chunk.loc[mask]
+        result.append(chunk_filtered)
+    mask_df = pd.concat(result, ignore_index=True)
+    
+    return mask_df
 if __name__ == "__main__":
     df = load_qobs('buhahk')
     print(df)
