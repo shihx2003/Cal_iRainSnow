@@ -15,7 +15,7 @@ import matplotlib.dates as mdates
 import numpy as np
 
 
-def plot_streamflow(qobs_df, qsim_df, sim_cols=None, output_dir='./pic/'):
+def plot_streamflow(qobs_df, qsim_df, mark=None, output_dir='./pic/'):
     """
     """
     if not os.path.exists(output_dir):
@@ -50,7 +50,10 @@ def plot_streamflow(qobs_df, qsim_df, sim_cols=None, output_dir='./pic/'):
         ax.xaxis.set_major_locator(mdates.MonthLocator())
 
         plt.tight_layout()
-        plt.savefig(f'{output_dir}/streamflow_{year}.png', dpi=300)
+        if mark:
+            plt.savefig(f'{output_dir}/{mark}_{year}.png', dpi=300)
+        else:
+            plt.savefig(f'{output_dir}/{year}.png', dpi=300)
         plt.close()
 
     print(f"Annual streamflow plots saved to {output_dir}")
