@@ -8,15 +8,17 @@
 '''
 
 # here put the import lib
-import subprocess
+
 import os
+import yaml
 import shutil
 import logging
+import subprocess
+import pandas as pd
 
-import yaml
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from core.util.params import update_lumpara, check_lumpara, update_mon_lumpara
 
-from core.util.params import update_lumpara, check_lumpara
 logger = logging.getLogger(__name__)
 
 class iRainSnowInitializer:
@@ -75,18 +77,24 @@ class iRainSnowInitializer:
         return self.job_dir
 
     def inital_params(self):
-        logger.info(f"Initializing parameters for {self.basin_name} in {self.job_dir} ...")
-
         self.lumpara_file = os.path.join(self.job_dir, 'Data', f"Lumpara_{self.basin_name}.txt")
         self.default_lumpara_path = os.path.join(self.ROOT, 'Source', 'params', 'Lumpara_basin.txt')
-        update_lumpara(self.default_lumpara_path, self.lumpara_file, self.set_params)
 
-        if not check_lumpara(self.lumpara_file, self.set_params):
-            raise ValueError(f"Invalid parameters in {self.lumpara_file}. Please check the parameters.")
+        if  isinstance(self.set_params, dict):
+            logger.info(f"Initializing parameters for {self.basin_name} in {self.job_dir} ...")
+            update_lumpara(self.default_lumpara_path, self.lumpara_file, self.set_params)
+
+            if not check_lumpara(self.lumpara_file, self.set_params):
+                raise ValueError(f"Invalid parameters in {self.lumpara_file}. Please check the parameters.")
+            
+            logger.info(f"Parameters initialized in {self.lumpara_file}")
+        elif isinstance(self.set_params, pd.DataFrame):
+            update_mon_lumpara(self.default_lumpara_path, self.lumpara_file, self.set_params, params_names=['K', 'CG', 'CI', 'CS', 'Kech', 'KLWL'])
+
+        else:
+            logger.error("set_params must be a dictionary or a DataFrame.")
+            raise TypeError("set_params must be a dictionary or a DataFrame.")
         
-        logger.info(f"Parameters initialized in {self.lumpara_file}")
-
-
     def inital_job(self):
         """
         Initialize the job by copying files and setting parameters.

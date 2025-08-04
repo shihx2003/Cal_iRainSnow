@@ -30,3 +30,31 @@ def generate_jobs(param_df, job_group, **kwargs):
     with open(f'./jobs/{job_group}.yaml', 'w', encoding='utf-8') as f:
         yaml.dump(jobs, f, default_flow_style=False, sort_keys=False)
     return jobs
+
+def generate_mon_jobs(params_ls, job_group, **kwargs):
+    """
+    Generate jobs for monthly parameter updates.
+    """
+    to_update_params = kwargs.get('update_params', ['K', 'CG', 'CI', 'CS', 'Kech', 'KLWL'])
+    os.makedirs(f'./jobs/{job_group}', exist_ok=True)
+    jobs = {}
+    for i in range(len(params_ls)):
+        job = {
+            "job_id": f"{job_group}_{i+1}",
+            "set_params": params_ls[i],
+        }
+        jobs[f'{job_group}_{i+1}'] = job
+
+    jobs_dict = {}
+    for job_id, params in jobs.items():
+        params['set_params'].to_csv(f'./jobs/{job_group}/{job_id}.csv', index=False)
+        jobs_dict[job_id] = {
+            'job_id': job_id,
+            'params_csv': f'./jobs/{job_group}/{job_id}.csv'
+        }
+
+    with open(f'./jobs/{job_group}.yaml', 'w', encoding='utf-8') as f:
+        yaml.dump(jobs_dict, f, default_flow_style=False, sort_keys=False)
+    
+
+    return jobs

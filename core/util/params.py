@@ -80,16 +80,17 @@ def check_lumpara(lumpara_file, new_params):
         return False
 
 
-if __name__ == "__main__":
+def adjust_mon_lumpara(df, new_params, **kwargs):
+    df = df.copy()
+    params_names = kwargs.get("params_names", ['K', 'CG', 'CI', 'CS', 'Kech', 'KLWL'])
+    for param in params_names:
+        df[param] = new_params[param]
+    return df
 
-    dfparams_file = "E:/Working/QingHaiSnow/CalRsim/test/Lumpara_buhahk.txt"
-    job_dir = "E:/Working/QingHaiSnow/CalRsim/test"
-    new_params = {
-        'K': 1.5,
-        'CG': 0.999,
-        'CI': 0.97,
-        'CS': 0.75,
-        'Kech': 0.03,
-        'KLWL': 5.0
-    }
-    update_lumpara(dfparams_file, job_dir, 'buhahk_test', new_params)
+def update_mon_lumpara(lumpara_file, job_dir, params_df, **kwargs):
+    """
+    """
+    df = load_lumpara(lumpara_file)
+    df = adjust_mon_lumpara(df, params_df, **kwargs)
+    write_lumpara(df, job_dir)
+
