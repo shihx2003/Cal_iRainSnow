@@ -94,3 +94,26 @@ def update_mon_lumpara(lumpara_file, job_dir, params_df, **kwargs):
     df = adjust_mon_lumpara(df, params_df, **kwargs)
     write_lumpara(df, job_dir)
 
+def update_dat_params(file_path, params, output_path):
+    """
+    """
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
+    
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if line.startswith('!SCF, the snow enlargement factor') and 'scf' in params:
+            lines[i+1] = f"{params['scf']}\n"
+        elif line.startswith('!snow melting coefficient') and 'snow_melting_coef' in params:
+            lines[i+1] = f"{params['snow_melting_coef']}\n"
+        elif line.startswith('!free water coefficient') and 'free_water_coef' in params:
+            lines[i+1] = f"{params['free_water_coef']}\n"
+        elif line.startswith('!tension water coefficient') and 'tension_water_coef' in params:
+            lines[i+1] = f"{params['tension_water_coef']}\n"
+        i += 1
+        
+    with open(output_path, 'w') as f:
+        f.writelines(lines)
+    
+    return output_path

@@ -17,7 +17,7 @@ import subprocess
 import pandas as pd
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from core.util.params import update_lumpara, check_lumpara, update_mon_lumpara
+from core.util.params import update_lumpara, check_lumpara, update_mon_lumpara, update_dat_params
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +46,14 @@ class iRainSnowInitializer:
         self.result_dir = os.path.join(self.ROOT, 'Results')
 
         self.basin_name = basin_config['name']
+        
 
         self.src_dir = os.path.join(self.ROOT, 'Source', self.basin_name)
         self.run_dir = os.path.join(self.ROOT, 'Run', self.basin_name)
 
         self.job_id = job_config['job_id']
-        self.set_params = job_config.get('set_params', {})
+        self.set_params = job_config.get('set_params', None)
+        self.dat_params = job_config.get('datparams', None)
 
     def copy_files(self):
         """ 
@@ -75,6 +77,15 @@ class iRainSnowInitializer:
         
         self.exe_path = os.path.join(self.job_dir, 'iRainSnow.exe')
         return self.job_dir
+
+    def set_dat_params(self):
+        self.default_dat_path = os.path.join(self.ROOT, 'Source', 'params', 'Configure_basin.dat')
+        self.dat_path = os.path.join(self.job_dir, 'Configure.dat')
+        if self.dat_params is None:
+            logger.warning("No dat parameters provided, skipping dat parameter update.")
+            shutil.copy(self.default_dat_path, self.dat_path)
+        else:
+            update_dat_params(self.default_dat_path, self.dat_params, self.dat_path)
 
     def inital_params(self):
         self.lumpara_file = os.path.join(self.job_dir, 'Data', f"Lumpara_{self.basin_name}.txt")
@@ -101,6 +112,7 @@ class iRainSnowInitializer:
         """
         try:
             self.copy_files()
+            self.set_dat_params()
             self.inital_params()
         except Exception as e:
             logger.error(f"Error initializing job {self.job_id}: {e}")
@@ -181,7 +193,8 @@ class iRainSnowInitializer:
         # 要保留的文件路径
         keep_files = {
             os.path.join(self.job_dir, 'Output', 'StaQSim.txt'),
-            os.path.join(self.job_dir, 'Data', f"Lumpara_{self.basin_name}.txt")
+            os.path.join(self.job_dir, 'Data', f"Lumpara_{self.basin_name}.txt"),
+            os.path.join(self.job_dir, 'Configure.dat')
         }
     
         for path in keep_files:

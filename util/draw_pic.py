@@ -46,7 +46,7 @@ def plot_streamflow(qobs_df, qsim_df, mark=None, output_dir='./pic/'):
         ax.set_ylabel('Streamflow (m³/s)', fontsize=12)
         ax.grid(True, linestyle='--', alpha=0.7)
         ax.legend()
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m'))  # Change '%b' to '%m' for numerical months
         ax.xaxis.set_major_locator(mdates.MonthLocator())
 
         plt.tight_layout()
