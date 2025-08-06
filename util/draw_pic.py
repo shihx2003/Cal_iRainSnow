@@ -40,7 +40,9 @@ def plot_streamflow(qobs_df, qsim_df, mark=None, output_dir='./pic/'):
                 obs_vals = qobs_year.loc[common_idx].values
                 sim_vals = qsim_year.loc[common_idx].values
                 nse = 1 - (np.sum((sim_vals - obs_vals) ** 2) / np.sum((obs_vals - np.mean(obs_vals)) ** 2))
+                pb = (np.sum(sim_vals) - np.sum(obs_vals)) / np.sum(obs_vals) * 100
                 plt.figtext(0.15, 0.02 + i*0.03, f'{col} NSE: {nse:.3f}', fontsize=9, color=color)
+                plt.figtext(0.65, 0.02 + i*0.03, f'{col} PB: {pb:.2f}%', fontsize=9, color=color)
         ax.set_title(f'Streamflow Comparison {year}', fontsize=14)
         ax.set_xlabel('Date', fontsize=12)
         ax.set_ylabel('Streamflow (m³/s)', fontsize=12)

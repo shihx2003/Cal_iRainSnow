@@ -228,7 +228,7 @@ class iRainSnowInitializer:
 
         if return_code:
             self.collect()
-            self.cleanup()
+            # self.cleanup()
         else:
             self.collect(mark="error")
 

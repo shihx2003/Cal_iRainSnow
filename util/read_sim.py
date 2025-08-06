@@ -21,7 +21,7 @@ def read_sta_qsim(StaQSim_path: str) -> pd.DataFrame:
     df.columns = ['Year', 'Month', 'Day', 'Precipitation', 'Snowmelt_Liquid', 'Historical_Runoff', 'Sim_Q']
     df['Date'] = pd.to_datetime(df[['Year', 'Month', 'Day']])
     df = df[['Date', 'Precipitation', 'Snowmelt_Liquid', 'Historical_Runoff', 'Sim_Q']]
-    df.replace('***************', 9999999999.0000, inplace=True)
+    df.replace('***************', 0.0, inplace=True)
     
     df['Date'] = pd.to_datetime(df['Date'])
     df['Sim_Q'] = df['Sim_Q'].astype(float)
