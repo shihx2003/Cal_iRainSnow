@@ -12,6 +12,9 @@ log
 *.log
 jobs/*
 Analysis
+pic
+Finial
+*7z
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
