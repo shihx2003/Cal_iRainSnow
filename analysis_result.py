@@ -20,8 +20,8 @@ from util.read_obs import load_qobs, div_q_chunk, div_q
 from util.read_sim import load_qsim, batch_load_qsim, read_sta_qsim
 
 # work_dir = "Full_PSO_buhahk"
-# work_dir = "Full_PSO_xinzai"
-work_dir = "Full3_PSO_niuchang"
+work_dir = "Full_PSO_xinzai"
+# work_dir = "Full3_PSO_niuchang"
 
 print(f"Loading observations for {work_dir.split('_')[-1]}")
 qobs = load_qobs(f"{work_dir.split('_')[-1]}")
