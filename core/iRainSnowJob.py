@@ -75,7 +75,7 @@ class iRainSnowInitializer:
             raise RuntimeError(f"Error copying folder: {e}")
         logger.info(f"Copied to {self.job_dir}")
         
-        self.exe_path = os.path.join(self.job_dir, 'iRainSnow.exe')
+        self.exe_path = os.path.join(self.job_dir, 'iRainSnow-QH.exe')
         return self.job_dir
 
     def set_dat_params(self):
