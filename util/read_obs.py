@@ -53,6 +53,31 @@ def div_q_chunk(df, start, end, chunk_size=500) -> pd.DataFrame:
     mask_df = pd.concat(result, ignore_index=True)
     
     return mask_df
+
+def load_pretem(basin, **kwargs) -> pd.DataFrame:
+    """
+    """
+    pre_file = kwargs.get('pre_file', './Source/meteodata/pre_avg.csv')
+    tem_file = kwargs.get('tem_file', './Source/meteodata/tem_avg.csv')
+    
+
+    pre = pd.read_csv(pre_file)
+    pre.rename(columns={'time': 'Date'}, inplace=True)
+    pre['Date'] = pd.to_datetime(pre['Date'])
+
+    tem = pd.read_csv(tem_file)
+    tem.rename(columns={'time': 'Date'}, inplace=True)
+    tem['Date'] = pd.to_datetime(tem['Date'])
+
+    pre = pre[['Date', basin]]
+    tem = tem[['Date', basin]]
+
+    pre.rename(columns={basin: 'pre'}, inplace=True)
+    tem.rename(columns={basin: 'tem'}, inplace=True)
+
+    return pre, tem
+
+
 if __name__ == "__main__":
     df = load_qobs('buhahk')
     print(df)
