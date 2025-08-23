@@ -28,10 +28,10 @@ from uuid import uuid4
 from core.iRainSnowJob import iRainSnowInitializer
 from core.RunningJobs import batch_instantiate, schedule_and_track_jobs
 from core.util.jobs import generate_jobs, generate_mon_jobs
-from util.draw_pic import plot_streamflow
+from util.draw_pic import plot_streamflow, draw_tpso, draw_heat_nsepb
 
 from core.util.objfun import NSE, dict_to_df, PBias
-from util.read_obs import load_qobs, div_q_chunk, div_q
+from util.read_obs import load_qobs, div_q_chunk, div_q, load_pretem
 from core.util.params import adjust_mon_lumpara, load_lumpara, write_lumpara, update_lumpara, check_lumpara
 from util.read_sim import load_qsim, batch_load_qsim, read_sta_qsim
 import os
@@ -43,17 +43,18 @@ logger = logging.getLogger("GA_Optimizer")
 
 with open("./config/iRainSnow.yaml", "r", encoding="utf-8") as f:
     config = yaml.safe_load(f)
-
 global_config = config["global"]
-basin_config = {"name": "xinzai"}
 
 
+
+job_group = "Manual_buhahk_6cfa712f"
+
+
+
+
+basin_config = {"name": f'{job_group.split("_")[1]}'}
 with open(f"./config/basins/manual_cal_{basin_config['name']}.yaml", "r", encoding="utf-8") as f:
     basin_params = yaml.safe_load(f)
-
-job_group = "Manual_xinzai_b32a864e"
-
-
 yaml_file = f"./jobs/{job_group}.yaml"
 with open(yaml_file, "r", encoding="utf-8") as f:
     job_config = yaml.safe_load(f)
@@ -70,22 +71,31 @@ for job_id in job_config:
     set_lumpara.append(pd.read_csv(job_config[job_id]["params_csv"]))
 
     df = read_sta_qsim(f"./Run/{basin_config['name']}/{job_id}/Output/StaQSim.txt")
-    df = df[['Date', 'Sim_Q']]
-    df = df.rename(columns={'Sim_Q': job_id})
+    df = df[['Date', 'Sim_Q', 'Snowmelt_Liquid']]
+    df = df.rename(columns={'Sim_Q': job_id, 'Snowmelt_Liquid': f'{job_id}_SL'})
 
     if not df_ls:
         df_ls.append(df)
     else:
-        df_ls.append(df[[job_id]])
+        df_ls.append(df[[job_id, f'{job_id}_SL']])
 df_sim = pd.concat(df_ls, axis=1)
 df_sim = div_q(df_sim, '2014-01-01', '2023-12-31')
-print(df_sim)
-plot_streamflow(df_obs, df_sim, job_group)
 
+pre, tem = load_pretem(basin_config['name'])
+pre = div_q(pre, '2014-01-01', '2023-12-31')
+tem = div_q(tem, '2014-01-01', '2023-12-31')
+
+draw_heat_nsepb(df_sim, df_obs, mark=job_group)
+draw_tpso(df_sim, df_obs, pre, tem, mark=job_group)
+
+
+# plot_streamflow(df_obs, df_sim, job_group)
+df_sim = df_sim[[col for col in df_sim.columns if not col.endswith('_SL')]]
 cal_sim = div_q(df_sim, '2015-01-01', '2020-12-31')
 cal_obs = div_q(df_obs, '2015-01-01', '2020-12-31')
 val_sim = div_q(df_sim, '2021-01-01', '2023-12-31')
 val_obs = div_q(df_obs, '2021-01-01', '2023-12-31')
+
 
 nse_cal = dict_to_df(NSE(cal_obs, cal_sim), "nse_cal")
 nse_val = dict_to_df(NSE(val_obs, val_sim), "nse_val")

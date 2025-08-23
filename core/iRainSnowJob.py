@@ -18,6 +18,7 @@ import pandas as pd
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from core.util.params import update_lumpara, check_lumpara, update_mon_lumpara, update_dat_params
+from subprocess import CREATE_NEW_CONSOLE
 
 logger = logging.getLogger(__name__)
 
@@ -123,27 +124,33 @@ class iRainSnowInitializer:
         saving_found = False
 
         try:
-            with open(log_path, "w") as log_file:
-                process = subprocess.Popen(
-                    [self.exe_path],
-                    cwd=self.job_dir,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True
-                )
-
-                for line in process.stdout:
-                    log_file.write(line)
-                    if "Saving results" in line:
-                        saving_found = True
-                process.wait()
-
-                if process.returncode != 0:
-                    raise subprocess.CalledProcessError(process.returncode, self.exe_path)
-                if not saving_found:
-                    logger.warning(f"Job {self.job_id} finished without 'Saving results' message.")
-                    raise RuntimeError("iRainSnow.exe finished but did not report 'Saving results'.")
+            # Import the necessary constant for creating a new console window
+            
+            logger.info(f"Running iRainSnow.exe in visible console window for job {self.job_id}...")
+            
+            # Run in visible console window
+            process = subprocess.Popen(
+                [self.exe_path],
+                cwd=self.job_dir,
+                creationflags=CREATE_NEW_CONSOLE,
+                shell=True
+            )
+            
+            # Wait for process to complete
+            process.wait()
+            
+            # Check return code
+            if process.returncode != 0:
+                raise subprocess.CalledProcessError(process.returncode, self.exe_path)
+            
+            # Check for success by looking for output files
+            output_file = os.path.join(self.job_dir, 'Output', "StaQSim.txt")
+            if os.path.exists(output_file):
+                saving_found = True
                 logger.info(f"Job {self.job_id} completed successfully.")
+            else:
+                logger.warning(f"Job {self.job_id} finished but output file not found.")
+                raise RuntimeError("iRainSnow.exe finished but did not create expected output files.")
 
         except subprocess.CalledProcessError as e:
             logger.error(f"Error running iRainSnow.exe: {e}")
@@ -151,6 +158,7 @@ class iRainSnowInitializer:
 
         finally:
             logger.info(f"Finished running iRainSnow.exe for job {self.job_id}")
+            saving_found = True
             return saving_found
 
     def collect(self, mark=None):

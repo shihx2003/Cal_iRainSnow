@@ -18,10 +18,10 @@ from uuid import uuid4
 from core.iRainSnowJob import iRainSnowInitializer
 from core.RunningJobs import batch_instantiate, schedule_and_track_jobs
 from core.util.jobs import generate_jobs, generate_mon_jobs
-from util.draw_pic import plot_streamflow
+from util.draw_pic import plot_streamflow, draw_tpso, draw_heat_nsepb
 
 from core.util.objfun import NSE, dict_to_df, PBias
-from util.read_obs import load_qobs, div_q_chunk, div_q
+from util.read_obs import load_qobs, div_q_chunk, div_q, load_pretem
 from core.util.params import adjust_mon_lumpara, load_lumpara, write_lumpara, update_lumpara, check_lumpara
 from util.read_sim import load_qsim, batch_load_qsim, read_sta_qsim
 import os
@@ -53,49 +53,66 @@ with open(f"./config/basins/manual_cal_{basin_config['name']}.yaml", "r", encodi
 ###################                                                 test mon
 ###################   1      2      3      4      5      6      7      8      9     10     11      12
 lumpara = {'CG':   [0.996, 0.996, 0.996, 0.996, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.996, 0.996], 
-           'CI':   [0.92,  0.92,  0.92,  0.92,  0.92,  0.95,  0.95,  0.98,  0.98,  0.98,  0.92,  0.92 ], 
-           'CS':   [0.80,  0.90,  0.70,  0.20,  0.500, 0.500, 0.500, 0.500, 0.500, 0.50,  0.50,  0.40 ], 
-           'K':    [1.0,   0.3,   0.3,   0.3,   0.3,   1.8,   2.8,   3.0,   2.5,   0.1,   0.1,   0.4  ], 
-           'KLWL': [8.0,   8.0,   8.0,   8.0,   9.5,   4.0,   2.0,   3.0,   3.0,   8.0,   8.0,   15.0  ], 
-           'Kech': [0.3,   0.2,   0.01,  0.400, 0.400, 0.400, 0.400, 0.400, 0.400, 0.1,  0.3,   0.3  ]}
+           'CI':   [0.96,  0.92,  0.92,  0.92,  0.92,  0.92,  0.95,  0.95,  0.95,  0.95,  0.98,  0.98 ],        # 降低延缓退水，基流变大
+           'CS':   [0.99,  0.99,  0.99,  0.99,  0.100, 0.010, 0.010, 0.010, 0.50,  0.10,  0.10,  0.40 ],        # 调大CS则基流变大
+           'K':    [1.0,   0.3,   0.3,   0.3,   0.3,   2.2,   2.4,   2.8,   1.6,   0.8,   0.4,   1.2  ],        # 通过增大雪量，然后增加融雪速度？
+           'KLWL': [5.0,   8.0,   8.0,   8.0,   8.5,   3.0,   0.5,   5.0,   4.0,   8.0,   9.0,   5.0  ],        # 雪融化的速度，化完就没了，雪量很少
+           'Kech': [0.3,   0.2,   0.01,  0.001, 0.001, 0.001, 0.001, 0.001, 0.04,  0.01,  0.3,   0.3  ]}
 ###################   0      1      2      3      4      5      6      7      8      9     10     11 
-##################
 
-# lumpara_1 = {'CG':   [0.996, 0.996, 0.996, 0.996, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.996, 0.996], 
-#            'CI':   [0.92,  0.92,  0.92,  0.92,  0.92,  0.95,  0.95,  0.98,  0.98,  0.98,  0.92,  0.92 ], 
-#            'CS':   [0.80,  0.90,  0.70,  0.20,  0.100, 0.010, 0.010, 0.010, 0.010, 0.10,  0.10,  0.40 ], 
-#            'K':    [0.59,  0.59,  0.59,  0.44,  0.61,  0.44,  0.59,  0.59,  0.03,  1.61,  1.16,  0.59 ], 
-#            'KLWL': [9.0,   9.0,   9.0,   1.83,  6.03,  1.83,  2.32,  2.32,  0.10,  6.02,  6.75,  9.0  ], 
-#            'Kech': [0.3,   0.2,   0.01,  0.010, 0.010, 0.010, 0.010, 0.010, 0.050, 0.01,  0.3,   0.3  ]}
-# ###################   0      1      2      3      4      5      6      7      8      9     10     11 
+###################   1      2      3      4      5      6      7      8      9     10     11      12
+lumparb = {'CG':   [0.996, 0.996, 0.996, 0.996, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.996, 0.996], 
+           'CI':   [0.96,  0.92,  0.92,  0.92,  0.92,  0.92,  0.95,  0.95,  0.95,  0.95,  0.98,  0.98 ],        # 降低延缓退水，基流变大
+           'CS':   [0.99,  0.99,  0.99,  0.99,  0.100, 0.010, 0.010, 0.010, 0.50,  0.10,  0.10,  0.40 ],        # 调大CS则基流变大
+           'K':    [1.0,   0.3,   0.3,   0.3,   0.3,   2.2,   2.4,   2.8,   1.6,   0.8,   0.4,   1.2  ],        # 通过增大雪量，然后增加融雪速度？
+           'KLWL': [5.0,   8.0,   8.0,   8.0,   8.5,   3.0,   0.5,   5.0,   4.0,   8.0,   9.0,   5.0  ],        # 雪融化的速度，化完就没了，雪量很少
+           'Kech': [0.3,   0.2,   0.01,  0.001, 0.001, 0.001, 0.001, 0.001, 0.04,  0.01,  0.3,   0.3  ]}
+###################   0      1      2      3      4      5      6      7      8      9     10     11 
 
+###################   1      2      3      4      5      6      7      8      9     10     11      12
+lumparc = {'CG':   [0.996, 0.996, 0.996, 0.996, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.996, 0.996], 
+           'CI':   [0.96,  0.92,  0.92,  0.92,  0.92,  0.92,  0.95,  0.95,  0.95,  0.95,  0.98,  0.98 ],        # 降低延缓退水，基流变大
+           'CS':   [0.99,  0.99,  0.99,  0.99,  0.100, 0.010, 0.010, 0.010, 0.50,  0.10,  0.10,  0.40 ],        # 调大CS则基流变大
+           'K':    [1.0,   0.3,   0.3,   0.3,   0.3,   2.2,   2.4,   2.8,   1.6,   0.8,   0.4,   1.2  ],        # 通过增大雪量，然后增加融雪速度？
+           'KLWL': [5.0,   8.0,   8.0,   8.0,   8.5,   3.0,   0.5,   5.0,   4.0,   8.0,   9.0,   5.0  ],        # 雪融化的速度，化完就没了，雪量很少
+           'Kech': [0.3,   0.2,   0.01,  0.001, 0.001, 0.001, 0.001, 0.001, 0.04,  0.01,  0.3,   0.3  ]}
+###################   0      1      2      3      4      5      6      7      8      9     10     11 
+
+###################   1      2      3      4      5      6      7      8      9     10     11      12
+lumpard = {'CG':   [0.996, 0.996, 0.996, 0.996, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.996, 0.996], 
+           'CI':   [0.96,  0.92,  0.92,  0.92,  0.92,  0.92,  0.95,  0.95,  0.95,  0.95,  0.98,  0.98 ],        # 降低延缓退水，基流变大
+           'CS':   [0.99,  0.99,  0.99,  0.99,  0.100, 0.010, 0.010, 0.010, 0.50,  0.10,  0.10,  0.40 ],        # 调大CS则基流变大
+           'K':    [1.0,   0.3,   0.3,   0.3,   0.3,   2.2,   2.4,   2.8,   1.6,   0.8,   0.4,   1.2  ],        # 通过增大雪量，然后增加融雪速度？
+           'KLWL': [5.0,   8.0,   8.0,   8.0,   8.5,   3.0,   0.5,   5.0,   4.0,   8.0,   9.0,   5.0  ],        # 雪融化的速度，化完就没了，雪量很少
+           'Kech': [0.3,   0.2,   0.01,  0.001, 0.001, 0.001, 0.001, 0.001, 0.04,  0.01,  0.3,   0.3  ]}
+###################   0      1      2      3      4      5      6      7      8      9     10     11 
 datparams = {
         'scf'                : 1.0,
-        'snow_melting_coef'  : 1.2,
-        'free_water_coef'    : 2.4,
-        'tension_water_coef' : 0.85,
+        'snow_melting_coef'  : 1.0,
+        'free_water_coef'    : 1.0,         # SM
+        'tension_water_coef' : 0.85,        # WM
     }
-set_lumpara = [pd.DataFrame(lumpara)]
+set_lumpara = [pd.DataFrame(lumpara), pd.DataFrame(lumparb), pd.DataFrame(lumparc), pd.DataFrame(lumpard)]
+# set_lumpara = [pd.DataFrame(lumpara)]
 set_datparams = [datparams]
 
-# # for i in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
-for i in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
-# # for i in [4.0, 4.2, 4.4, 4.6, 4.8, 5.0, 5.2, 5.4, 5.6, 5.8]:
-# for i in [3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0]:
-    param_modified = lumpara.copy()
+# for i in [0.5]:
+#     param_modified = lumpara.copy()
+#     print(param_modified['CI'])
+#     for j in range(-5, 0):
+#         param_modified['CI'][j] = i * param_modified['CI'][j]
+#     print(param_modified['CI'])
 
-    # param_modified['KLWL'] = np.array(param_modified['KLWL']) * i
-    param_modified['KLWL'][4] = i
-    print(param_modified['KLWL'])
+#     param_modified = pd.DataFrame(param_modified)
+#     set_lumpara.append(param_modified)
 
-    param_modified = pd.DataFrame(param_modified)
-    set_lumpara.append(param_modified)
-
-
-# for i in [0.5,0.7,0.9,1.1,1.3,1.5]:
-#     datparams_modified = datparams.copy()
-#     datparams_modified['snow_melting_coef'] = i 
-#     set_datparams.append(datparams_modified)
+# for i in [0.8,0.85,0.90,0.95,1.05,1.10,1.15,1.20]:
+#     # datparams_modified = datparams.copy()
+#     # datparams_modified['tension_water_coef'] = i 
+#     # set_datparams.append(datparams_modified)
+#     param_modified = lumpara.copy()
+#     param_modified['CI'] = [i * k for k in param_modified['CI']]
+#     set_lumpara.append(pd.DataFrame(param_modified))
 
 if len(set_lumpara) == 1:
     setmethod = 'datparams'  # Only datparams available
@@ -115,8 +132,15 @@ schedule_and_track_jobs(set_jobs, max_num=12)
 df_sim = load_qsim(f"./jobs/{job_group}.yaml", basin_config["name"])
 df_sim = div_q(df_sim, '2014-01-01', '2023-12-31')
 
-plot_streamflow(df_obs, df_sim, job_group)
 
+pre, tem = load_pretem(basin_config['name'])
+pre = div_q(pre, '2014-01-01', '2023-12-31')
+tem = div_q(tem, '2014-01-01', '2023-12-31')
+draw_heat_nsepb(df_sim, df_obs, mark=job_group)
+draw_tpso(df_sim, df_obs, pre, tem, mark=job_group)
+
+# plot_streamflow(df_obs, df_sim, job_group)
+df_sim = df_sim[[col for col in df_sim.columns if not col.endswith('_SL')]]
 cal_sim = div_q(df_sim, '2015-01-01', '2020-12-31')
 cal_obs = div_q(df_obs, '2015-01-01', '2020-12-31')
 val_sim = div_q(df_sim, '2021-01-01', '2023-12-31')

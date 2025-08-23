@@ -18,10 +18,10 @@ from uuid import uuid4
 from core.iRainSnowJob import iRainSnowInitializer
 from core.RunningJobs import batch_instantiate, schedule_and_track_jobs
 from core.util.jobs import generate_jobs, generate_mon_jobs
-from util.draw_pic import plot_streamflow
+from util.draw_pic import plot_streamflow, draw_tpso, draw_heat_nsepb
 
 from core.util.objfun import NSE, dict_to_df, PBias
-from util.read_obs import load_qobs, div_q_chunk, div_q
+from util.read_obs import load_qobs, div_q_chunk, div_q, load_pretem
 from core.util.params import adjust_mon_lumpara, load_lumpara, write_lumpara, update_lumpara, check_lumpara
 from util.read_sim import load_qsim, batch_load_qsim, read_sta_qsim
 import os
@@ -53,11 +53,45 @@ with open(f"./config/basins/manual_cal_{basin_config['name']}.yaml", "r", encodi
 ###################                                                 test mon
 ###################   1      2      3      4      5      6      7      8      9     10     11      12
 lumpara = {'CG':   [0.996, 0.996, 0.996, 0.996, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.996, 0.996], 
-           'CI':   [0.92,  0.92,  0.92,  0.92,  0.92,  0.95,  0.95,  0.98,  0.98,  0.98,  0.92,  0.92 ], 
+           'CI':   [0.92,  0.92,  0.92,  0.92,  0.92,  0.92,  0.942, 0.93,  0.93,  0.98,  0.92,  0.92 ], 
+           'CS':   [0.80,  0.90,  0.70,  0.90,  0.90,  0.010, 0.010, 0.010, 0.010, 0.10,  0.20,  0.80 ], 
+           'K':    [3.1,   3.1,   3.1,   2.5,   3.5,   4.95,  4.3,   4.6,   5.7,   7.5,   4.7,   3.1  ], 
+           'KLWL': [5.0,   5.0,   5.0,   5.0,   3.0,   2.0,   2.0,   2.0,   3.0,   4.0,   4.0,   5.0  ], 
+           'Kech': [0.3,   0.2,   0.04,  0.13,  0.150, 0.150, 0.150, 0.150, 0.150, 0.01,  0.3,   0.3  ]}
+###################   0      1      2      3      4      5      6      7      8      9     10     11 
+###################   1      2      3      4      5      6      7      8      9     10     11      12
+lumparb = {'CG':   [0.996, 0.996, 0.996, 0.996, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.996, 0.996], 
+           'CI':   [0.92,  0.92,  0.92,  0.92,  0.92,  0.92,  0.942, 0.93,  0.93,  0.98,  0.92,  0.92 ], 
+           'CS':   [0.80,  0.90,  0.70,  0.90,  0.90,  0.010, 0.010, 0.010, 0.010, 0.10,  0.20,  0.80 ], 
+           'K':    [3.1,   3.1,   3.1,   2.5,   3.5,   4.95,  4.3,   4.6,   5.7,   7.5,   6.5,   6.5  ], 
+           'KLWL': [5.0,   5.0,   5.0,   5.0,   3.0,   2.0,   2.0,   2.0,   3.0,   4.0,   4.0,   5.0  ], 
+           'Kech': [0.3,   0.2,   0.04,  0.13,  0.150, 0.150, 0.150, 0.150, 0.150, 0.01,  0.3,   0.3  ]}
+###################   0      1      2      3      4      5      6      7      8      9     10     11 
+###################   1      2      3      4      5      6      7      8      9     10     11      12
+lumparc = {'CG':   [0.996, 0.996, 0.996, 0.996, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.996, 0.996], 
+           'CI':   [0.92,  0.92,  0.92,  0.92,  0.92,  0.95,  0.95,  0.98,  0.94,  0.94,  0.92,  0.92 ], 
            'CS':   [0.80,  0.90,  0.70,  0.20,  0.010, 0.010, 0.010, 0.010, 0.010, 0.10,  0.20,  0.80 ], 
-           'K':    [3.1,   3.1,   3.1,   2.5,   3.0,   5.5,   4.7,   5.0,   5.7,   5.5,   4.7,   3.1  ], 
-           'KLWL': [5.0,   5.0,   5.0,   5.0,   2.5,   2.0,   2.0,   2.0,   3.0,   4.0,   4.0,   5.0  ], 
-           'Kech': [0.3,   0.2,   0.04,  0.03,  0.005, 0.005, 0.005, 0.005, 0.005, 0.01,  0.3,   0.3  ]}
+           'K':    [3.1,   3.1,   3.1,   2.5,   3.0,   5.5,   4.2,   4.8,   5.5,   5.5,   4.7,   3.1  ], 
+           'KLWL': [5.0,   5.0,   5.0,   5.0,   3.0,   2.0,   2.0,   2.0,   3.0,   4.0,   4.0,   5.0  ], 
+           'Kech': [0.3,   0.2,   0.04,  0.13,  0.150, 0.150, 0.150, 0.150, 0.150, 0.01,  0.3,   0.3  ]}
+###################   0      1      2      3      4      5      6      7      8      9     10     11 
+###################   1      2      3      4      5      6      7      8      9     10     11      12
+lumpard = {'CG':   [0.996, 0.996, 0.996, 0.996, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.996, 0.996], 
+           'CI':   [0.92,  0.92,  0.92,  0.92,  0.92,  0.95,  0.95,  0.98,  0.94,  0.94,  0.92,  0.92 ], 
+           'CS':   [0.80,  0.90,  0.70,  0.20,  0.010, 0.010, 0.010, 0.010, 0.010, 0.10,  0.20,  0.80 ], 
+           'K':    [3.1,   3.1,   3.1,   2.5,   3.0,   5.5,   4.2,   4.8,   5.5,   5.5,   4.7,   3.1  ], 
+           'KLWL': [5.0,   5.0,   5.0,   5.0,   3.0,   2.0,   2.0,   2.0,   3.0,   4.0,   4.0,   5.0  ], 
+           'Kech': [0.3,   0.2,   0.04,  0.13,  0.150, 0.150, 0.150, 0.150, 0.150, 0.01,  0.3,   0.3  ]}
+###################   0      1      2      3      4      5      6      7      8      9     10     11 
+
+
+###################   1      2      3      4      5      6      7      8      9     10     11      12
+lumpara = {'CG':   [0.996, 0.996, 0.996, 0.996, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.996, 0.996], 
+           'CI':   [0.92,  0.92,  0.92,  0.92,  0.92,  0.92,  0.942, 0.93,  0.93,  0.98,  0.92,  0.92 ], 
+           'CS':   [0.80,  0.90,  0.70,  0.90,  0.90,  0.010, 0.010, 0.010, 0.010, 0.10,  0.20,  0.80 ], 
+           'K':    [3.1,   3.1,   3.1,   2.5,   3.5,   4.95,  4.3,   4.6,   5.7,   7.5,   4.7,   3.1  ], 
+           'KLWL': [5.0,   5.0,   5.0,   5.0,   2.9,   2.4,   1.3,   2.0,   2.8,   4.1,   4.0,   5.0  ], 
+           'Kech': [0.3,   0.2,   0.04,  0.13,  0.01,  0.07,  0.15,  0.17,  0.150, 0.01,  0.3,   0.3  ]}
 ###################   0      1      2      3      4      5      6      7      8      9     10     11 
 datparams = {
         'scf'                : 1.0,
@@ -65,19 +99,27 @@ datparams = {
         'free_water_coef'    : 1.0,
         'tension_water_coef' : 0.85,
     }
+# set_lumpara = [pd.DataFrame(lumpara), pd.DataFrame(lumparb), pd.DataFrame(lumparc), pd.DataFrame(lumpard)]
 set_lumpara = [pd.DataFrame(lumpara)]
 set_datparams = [datparams]
 
-# for i in [0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8]:
-#     datparams_modified = datparams.copy()
-#     datparams_modified['scf'] = i + 0.6
-#     print(i / 10)
-#     set_datparams.append(datparams_modified)
+# for i in [0.87, 0.88, 0.89, 0.90, 0.91, 0.92, 0.93, 0.94, 0.95, 0.96]:
+# for i in [0.960,0.965,0.970,0.975,0.980,0.985,0.990,0.995,0.999]:
+# for i in [6.0, 6.1, 6.2, 6.3, 6.4, 6.5]:
+# for i in [6.4, 6.5, 6.5, 6.6, 6.7, 6.8, 6.9, 7.0]:
+# for i in [6.9,7.0,7.1,7.2,7.3,7.4,7.5,7.6,7.7,7.8,7.9]:
+# for i in [4.0,4.1,4.2,4.3,4.4,4.5,4.6,4.7,4.8,5.5,6.0]:
+# for i in [0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6]:
+# for i in [0.01,0.05,0.07,0.10,0.12,0.15,0.17,0.20,0.22]:
+#     lumpara_modified = lumpara.copy()
+#     lumpara_modified['Kech'][8] = i
+#     print(lumpara_modified['Kech'])
+#     lumpara_modified = pd.DataFrame(lumpara_modified)
+#     set_lumpara.append(lumpara_modified)
 
-# for i in range(7, 11):
+# for i in [0.9, 1.1, 1.2]:
 #     datparams_modified = datparams.copy()
-#     datparams_modified['free_water_coef'] = i / 10 - 0.05
-#     print(i / 10)
+#     datparams_modified['free_water_coef'] = i 
 #     set_datparams.append(datparams_modified)
 
 if len(set_lumpara) == 1:
@@ -98,8 +140,14 @@ schedule_and_track_jobs(set_jobs, max_num=12)
 df_sim = load_qsim(f"./jobs/{job_group}.yaml", basin_config["name"])
 df_sim = div_q(df_sim, '2014-01-01', '2023-12-31')
 
-plot_streamflow(df_obs, df_sim, job_group)
+pre, tem = load_pretem(basin_config['name'])
+pre = div_q(pre, '2014-01-01', '2023-12-31')
+tem = div_q(tem, '2014-01-01', '2023-12-31')
+draw_heat_nsepb(df_sim, df_obs, mark=job_group)
+draw_tpso(df_sim, df_obs, pre, tem, mark=job_group)
 
+# plot_streamflow(df_obs, df_sim, job_group)
+df_sim = df_sim[[col for col in df_sim.columns if not col.endswith('_SL')]]
 cal_sim = div_q(df_sim, '2015-01-01', '2020-12-31')
 cal_obs = div_q(df_obs, '2015-01-01', '2020-12-31')
 val_sim = div_q(df_sim, '2021-01-01', '2023-12-31')

@@ -25,6 +25,7 @@ def read_sta_qsim(StaQSim_path: str) -> pd.DataFrame:
     
     df['Date'] = pd.to_datetime(df['Date'])
     df['Sim_Q'] = df['Sim_Q'].astype(float)
+    df['Snowmelt_Liquid'] = df['Snowmelt_Liquid'].astype(float)
     
     return df
 
@@ -40,13 +41,14 @@ def load_qsim(job_yaml, basin, **kwargs) -> pd.DataFrame:
     for job_id in job_ids:
         file_path = os.path.join(result_dir, basin, f"StaQSim_{job_id}.txt")
         df = read_sta_qsim(file_path)
-        df = df[['Date', 'Sim_Q']]
+        df = df[['Date', 'Sim_Q', 'Snowmelt_Liquid']]
         df = df.rename(columns={'Sim_Q': job_id})
+        df = df.rename(columns={'Snowmelt_Liquid': f'{job_id}_SL'})
 
         if not qsim_dfs:
             qsim_dfs.append(df)
         else:
-            qsim_dfs.append(df[[job_id]])
+            qsim_dfs.append(df[[job_id, f'{job_id}_SL']])
             
     qsim_df = pd.concat(qsim_dfs, axis=1)
 
